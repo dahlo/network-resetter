@@ -11,6 +11,7 @@ usage() {
     echo "  -i  Network interface to restart (default: wlan0)"
     echo "  -a  Address to ping for internet connectivity (default: 8.8.8.8)"
     echo "  -t  Time in seconds to wait between reboots (default: 3600 seconds)"
+    echo "  -h  Print this help message"
     exit 1
 }
 
@@ -19,11 +20,11 @@ restart_interface() {
     if command -v ifdown > /dev/null 2>&1; then
         # Using ifdown/ifup
         echo "Restarting network interface using ifdown/ifup..."
-        sudo /sbin/ifdown ${INTERFACE} && sudo /sbin/ifup ${INTERFACE}
+        /sbin/ifdown ${INTERFACE} && /sbin/ifup ${INTERFACE}
     elif command -v nmcli > /dev/null 2>&1; then
         # Using nmcli
         echo "Restarting network interface using nmcli..."
-        sudo nmcli device down ${INTERFACE} && sudo nmcli device up ${INTERFACE}
+        nmcli device down ${INTERFACE} && nmcli device up ${INTERFACE}
     else
         echo "No suitable command found to restart network interface"
         exit 1
@@ -41,6 +42,9 @@ while getopts "i:a:t:h" opt; do
       ;;
     t )
       REBOOT_WAIT_TIME=$OPTARG
+      ;;
+    h )
+      usage
       ;;
     \? )
       usage
@@ -75,14 +79,14 @@ if [ $? -ne 0 ]; then
             if [ $((CURRENT_TIME - LAST_ATTEMPT)) -ge $REBOOT_WAIT_TIME ]; then
                 echo "Rebooting the system due to prolonged internet outage..."
                 date +%s > $REBOOT_ATTEMPT_FILE
-                sudo /sbin/reboot
+                /sbin/reboot
             else
                 echo "Reboot attempt was made less than $REBOOT_WAIT_TIME seconds ago. Skipping."
             fi
         else
             echo "First reboot attempt recorded, rebooting now..."
             date +%s > $REBOOT_ATTEMPT_FILE
-            sudo /sbin/reboot
+            /sbin/reboot
         fi
     else
         echo "Internet connectivity restored after restarting the interface."
