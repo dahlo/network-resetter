@@ -20,11 +20,11 @@ restart_interface() {
     if command -v ifdown > /dev/null 2>&1; then
         # Using ifdown/ifup
         echo "Restarting network interface using ifdown/ifup..."
-        /sbin/ifdown ${INTERFACE} && /sbin/ifup ${INTERFACE}
+        /sbin/ifdown ${INTERFACE} ; /sbin/ifup ${INTERFACE}
     elif command -v nmcli > /dev/null 2>&1; then
         # Using nmcli
         echo "Restarting network interface using nmcli..."
-        nmcli device down ${INTERFACE} && nmcli device up ${INTERFACE}
+        nmcli device down ${INTERFACE} ; nmcli device up ${INTERFACE}
     else
         echo "No suitable command found to restart network interface"
         exit 1
@@ -53,24 +53,28 @@ while getopts "i:a:t:h" opt; do
 done
 
 # Check for internet connectivity
+echo "Checking internet connectivity by pinging ${PING_ADDRESS}"
 ping -c 1 ${PING_ADDRESS} > /dev/null 2>&1
 
 if [ $? -ne 0 ]; then
     # No internet, attempt to restart network interface
-    echo "No internet, attempting to restart network interface..."
+    echo "No internet, attempting to restart network interface ${INTERFACE}..."
     restart_interface
     
     # Wait for 20 seconds before checking connectivity again
+    echo "Waiting 20s until retrying internet connection after restarting of interface..."
     sleep 20
 
     # Check internet connectivity again
+    echo "Checking internet again..."
     ping -c 1 ${PING_ADDRESS} > /dev/null 2>&1
 
     if [ $? -ne 0 ]; then
-        echo "No internet after restart, checking reboot history..."
         
         CURRENT_TIME=$(date +%s)
-        REBOOT_ATTEMPT_FILE="/tmp/last_reboot_attempt"
+        REBOOT_ATTEMPT_FILE="$HOME/.network-resetter.last_reboot_attempt"
+
+        echo "No internet after restart, checking reboot history..."
 
         if [ -f $REBOOT_ATTEMPT_FILE ]; then
             LAST_ATTEMPT=$(cat $REBOOT_ATTEMPT_FILE)
