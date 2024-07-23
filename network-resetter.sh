@@ -19,14 +19,14 @@ usage() {
 restart_interface() {
     if command -v ifdown > /dev/null 2>&1; then
         # Using ifdown/ifup
-        echo "Restarting network interface using ifdown/ifup..."
+        >&2 echo "Restarting network interface using ifdown/ifup..."
         /sbin/ifdown ${INTERFACE} ; /sbin/ifup ${INTERFACE}
     elif command -v nmcli > /dev/null 2>&1; then
         # Using nmcli
-        echo "Restarting network interface using nmcli..."
+        >&2 echo "Restarting network interface using nmcli..."
         nmcli device down ${INTERFACE} ; nmcli device up ${INTERFACE}
     else
-        echo "No suitable command found to restart network interface"
+        >&2 echo "No suitable command found to restart network interface"
         exit 1
     fi
 }
@@ -58,15 +58,15 @@ ping -c 1 ${PING_ADDRESS} > /dev/null 2>&1
 
 if [ $? -ne 0 ]; then
     # No internet, attempt to restart network interface
-    echo "No internet, attempting to restart network interface ${INTERFACE}..."
+    >&2 echo "No internet, attempting to restart network interface ${INTERFACE}..."
     restart_interface
     
     # Wait for 20 seconds before checking connectivity again
-    echo "Waiting 20s until retrying internet connection after restarting of interface..."
+    >&2 echo "Waiting 20s until retrying internet connection after restarting of interface..."
     sleep 20
 
     # Check internet connectivity again
-    echo "Checking internet again..."
+    >&2 echo "Checking internet again..."
     ping -c 1 ${PING_ADDRESS} > /dev/null 2>&1
 
     if [ $? -ne 0 ]; then
@@ -74,26 +74,26 @@ if [ $? -ne 0 ]; then
         CURRENT_TIME=$(date +%s)
         REBOOT_ATTEMPT_FILE="$HOME/.network-resetter.last_reboot_attempt"
 
-        echo "No internet after restart, checking reboot history..."
+        >&2 echo "No internet after restart, checking reboot history..."
 
         if [ -f $REBOOT_ATTEMPT_FILE ]; then
             LAST_ATTEMPT=$(cat $REBOOT_ATTEMPT_FILE)
 
             # Check if the last reboot attempt was longer than REBOOT_WAIT_TIME ago
             if [ $((CURRENT_TIME - LAST_ATTEMPT)) -ge $REBOOT_WAIT_TIME ]; then
-                echo "Rebooting the system due to prolonged internet outage..."
+                >&2 echo "Rebooting the system due to prolonged internet outage..."
                 date +%s > $REBOOT_ATTEMPT_FILE
                 /sbin/reboot
             else
-                echo "Reboot attempt was made less than $REBOOT_WAIT_TIME seconds ago. Skipping."
+                >&2 echo "Reboot attempt was made less than $REBOOT_WAIT_TIME seconds ago. Skipping."
             fi
         else
-            echo "First reboot attempt recorded, rebooting now..."
+            >&2 echo "First reboot attempt recorded, rebooting now..."
             date +%s > $REBOOT_ATTEMPT_FILE
             /sbin/reboot
         fi
     else
-        echo "Internet connectivity restored after restarting the interface."
+        >&2 echo "Internet connectivity restored after restarting the interface."
     fi
 else
     echo "Internet is connected."
