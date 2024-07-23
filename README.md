@@ -17,4 +17,11 @@ Usage: ./network-resetter.sh [-i interface] [-a address-to-ping] [-t seconds-bet
   -h  Print this help message
 ```
 
+Set a crontab that runs every minute to ensure internet connectivity:
 
+```bash
+# m h  dom mon dow   command
+* * * * * /path/to/network-resetter/network-resetter.sh -i wlp1s0 -a 192.168.1.1 > /dev/null
+```
+
+Any problems with the internet connection will be printed to `stderr`. Remove the `> /dev/null` to see also the all-ok message that gets printed to `stdout`, but since it runs every minute it will fill your log files quickly.
